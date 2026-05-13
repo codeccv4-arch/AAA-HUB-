@@ -4,7 +4,7 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
 -- 🔗 GitHub base
-local BASE = "https://raw.githubusercontent.com/codeccv4-arch/AAA-HUB-/refs/heads/main/MAIN.LUA"
+local BASE = "https://raw.githubusercontent.com/codeccv4-arch/AAA-HUB-/refs/heads/main/main"
 
 local CONFIG_URL = BASE .. "config.json"
 local MODULES_URL = BASE .. "modules.json"
