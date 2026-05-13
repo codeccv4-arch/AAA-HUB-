@@ -1,1 +1,101 @@
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
 
+local player = Players.LocalPlayer
+
+-- 🔗 GitHub base
+local BASE = "https://raw.githubusercontent.com/USERNAME/AAA-HUB/main/"
+
+local CONFIG_URL = BASE .. "config.json"
+local MODULES_URL = BASE .. "modules.json"
+local MODULES_PATH = BASE .. "Modules/"
+
+-- 💾 cache
+local config = nil
+
+-- 📥 โหลด JSON
+local function getJSON(url)
+	local success, res = pcall(function()
+		return game:HttpGet(url)
+	end)
+
+	if not success then
+		warn("Failed:", url)
+		return nil
+	end
+
+	local ok, data = pcall(function()
+		return HttpService:JSONDecode(res)
+	end)
+
+	if not ok then
+		warn("JSON error:", url)
+		return nil
+	end
+
+	return data
+end
+
+-- ⚙️ apply config
+local function applyConfig(cfg)
+	if not cfg then return end
+
+	local char = player.Character or player.CharacterAdded:Wait()
+	local hum = char:WaitForChild("Humanoid")
+
+	if cfg.walkspeed then
+		hum.WalkSpeed = cfg.walkspeed
+	end
+
+	if cfg.jumpPower then
+		hum.JumpPower = cfg.jumpPower
+	end
+end
+
+-- 📦 load module (NO loadstring – SAFE)
+local function loadModule(name)
+	local moduleTable = _G.MODULES[name]
+	if moduleTable and moduleTable.Init then
+		pcall(function()
+			moduleTable.Init(player, config)
+		end)
+	end
+end
+
+-- 🚀 start system
+local function start()
+	print("🚀 HUB STARTING...")
+
+	-- config
+	config = getJSON(CONFIG_URL)
+	applyConfig(config)
+
+	-- modules list
+	local data = getJSON(MODULES_URL)
+	if not data or not data.modules then return end
+
+	-- global storage
+	_G.MODULES = {}
+
+	-- load modules (ModuleScripts must already exist in game OR pre-injected)
+	for _, name in ipairs(data.modules) do
+		local ok, module = pcall(function()
+			-- NOTE: in real use, modules should be ModuleScripts inside game
+			return require(script.Modules:FindFirstChild(name))
+		end)
+
+		if ok and module then
+			_G.MODULES[name] = module
+			loadModule(name)
+			print("Loaded:", name)
+		else
+			warn("Failed module:", name)
+		end
+	end
+end
+
+-- ▶️ AUTO RUN
+task.spawn(function()
+	task.wait(1)
+	start()
+end)
